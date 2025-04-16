@@ -43,11 +43,13 @@ public struct CopyWithChangesMacro: MemberMacro {
                     continue
                 }
 
+                let typeString = type.description.trimmingCharacters(in: .whitespacesAndNewlines)
+                
                 if type.is(OptionalTypeSyntax.self) {
-                    arguments.append("\(pattern): \(type)? = .some(nil)")
-                    assignments.append("\(pattern): \(pattern) == .none ? nil : self.\(pattern)")
+                    arguments.append("\(pattern): \(typeString) = .some(nil)")
+                    assignments.append("\(pattern): \(pattern) == nil ? nil : self.\(pattern)")
                 } else {
-                    arguments.append("\(pattern): \(type)? = nil")
+                    arguments.append("\(pattern): \(typeString)? = nil")
                     assignments.append("\(pattern): \(pattern) ?? self.\(pattern)")
                 }
             }
