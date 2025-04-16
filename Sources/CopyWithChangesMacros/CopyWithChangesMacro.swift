@@ -44,8 +44,13 @@ public struct CopyWithChangesMacro: MemberMacro {
                 }
 
                 let typeString = type.description.trimmingCharacters(in: .whitespacesAndNewlines)
+
+                let isOptional = type.is(OptionalTypeSyntax.self)
+                let isDoubleOptional = type.as(OptionalTypeSyntax.self)?
+                    .wrappedType
+                    .is(OptionalTypeSyntax.self) == true
                 
-                if type.is(OptionalTypeSyntax.self) {
+                if isDoubleOptional {
                     arguments.append("\(pattern): \(typeString) = .some(nil)")
                     assignments.append("\(pattern): \(pattern) == nil ? nil : self.\(pattern)")
                 } else {
