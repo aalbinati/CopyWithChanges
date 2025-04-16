@@ -19,7 +19,12 @@ public struct CopyWithChangesMacro: MemberMacro {
             return []
         }
 
-        let variableDecls = members.compactMap { $0.decl.as(VariableDeclSyntax.self) }
+        let variableDecls = members
+            .compactMap { $0.decl.as(VariableDeclSyntax.self) }
+            .filter { decl in
+                !decl.modifiers.contains(where: { $0.name.text == "static" })
+            }
+        
         let bindings = variableDecls.flatMap { $0.bindings }
 
         let with = try {
