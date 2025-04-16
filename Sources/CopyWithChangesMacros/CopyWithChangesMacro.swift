@@ -37,10 +37,7 @@ public struct CopyWithChangesMacro: MemberMacro {
                     let type = binding.typeAnnotation?.type,
                     binding.accessor == nil
                 else {
-                    context.diagnose(Diagnostic(
-                        node: attribute,
-                        message: CopyWithChangesDiagnostic.unsupportedBinding(binding)
-                    ))
+                    // Silently skip fields that don't qualify, like computed properties
                     continue
                 }
 
