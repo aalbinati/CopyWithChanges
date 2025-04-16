@@ -34,7 +34,9 @@ public struct CopyWithChangesMacro: MemberMacro {
             for binding in bindings {
                 guard
                     let pattern = binding.pattern.as(IdentifierPatternSyntax.self)?.identifier.text,
-                    let type = binding.typeAnnotation?.as(TypeAnnotationSyntax.self)?.type
+                    let type = binding.typeAnnotation?.type,
+                    binding.accessor == nil, // 👈 means it's stored
+                    binding.initializer != nil || declaration.as(ClassDeclSyntax.self) != nil // 👈 optional for classes
                 else {
                     context.diagnose(Diagnostic(
                         node: attribute,
