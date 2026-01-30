@@ -25,7 +25,11 @@ public struct CopyWithChangesMacro: MemberMacro {
                 !decl.modifiers.contains(where: { $0.name.text == "static" })
             }
         
-        let bindings = variableDecls.flatMap { $0.bindings }
+        let bindings = variableDecls
+            .flatMap { $0.bindings }
+            .sorted {
+                $0.positionAfterSkippingLeadingTrivia < $1.positionAfterSkippingLeadingTrivia
+            }
 
         let with = try {
             var arguments: [String] = []
