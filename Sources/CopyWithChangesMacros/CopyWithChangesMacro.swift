@@ -33,42 +33,42 @@ public struct CopyWithChangesMacro: MemberMacro {
 
         let with = try {
             var arguments: [String] = []
+            var prelets: [String] = []
             var assignments: [String] = []
-
+        
             for binding in bindings {
                 guard
                     let pattern = binding.pattern.as(IdentifierPatternSyntax.self)?.identifier.text,
                     let type = binding.typeAnnotation?.type,
                     binding.accessor == nil
                 else {
-                    // Silently skip fields that don't qualify, like computed properties
                     continue
                 }
-
-                let typeString = type.description.trimmingCharacters(in: .whitespacesAndNewlines)
-
+        
+                let typeString = type.description.trimmingCharacters(in: .whitespacesAndNewlines)      
                 let isOptional = type.is(OptionalTypeSyntax.self)
-                let isDoubleOptional = type.as(OptionalTypeSyntax.self)?
-                    .wrappedType
-                    .is(OptionalTypeSyntax.self) == true
-                
-                if isDoubleOptional {
-                    arguments.append("\(pattern): \(typeString) = .some(nil)")
-                    assignments.append("\(pattern): \(pattern) == nil ? nil : self.\(pattern)")
+        
+                if isOptional {
+                    arguments.append("\(pattern): \(typeString) = nil")
+                    prelets.append("let _\(pattern): \(typeString) = \(pattern) ?? self.\(pattern)")
+                    assignments.append("\(pattern): _\(pattern)")
                 } else {
+                    // Non-optional stored property (T)
                     arguments.append("\(pattern): \(typeString)? = nil")
                     assignments.append("\(pattern): \(pattern) ?? self.\(pattern)")
                 }
             }
-
+        
             return try FunctionDeclSyntax(
-                "public func with(\(raw: arguments.joined(separator: ", "))) -> Self") {
-                    """
-                    Self(
-                    \(raw: assignments.joined(separator: ",\n"))
-                    )
-                    """
-                }
+                "public func with(\(raw: arguments.joined(separator: ", "))) -> Self"
+            ) {
+                """
+                \(raw: prelets.joined(separator: "\n"))
+                return Self(
+                \(raw: assignments.joined(separator: ",\n"))
+                )
+                """
+            }
         }()
 
         return [
