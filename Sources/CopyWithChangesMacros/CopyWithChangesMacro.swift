@@ -47,14 +47,13 @@ public struct CopyWithChangesMacro: MemberMacro {
         
                 let typeString = type.description.trimmingCharacters(in: .whitespacesAndNewlines)      
                 let isOptional = type.is(OptionalTypeSyntax.self)
+
+                arguments.append("\(pattern): \(typeString)? = nil")
         
                 if isOptional {
-                    arguments.append("\(pattern): \(typeString) = nil")
                     prelets.append("let _\(pattern): \(typeString) = \(pattern) ?? self.\(pattern)")
                     assignments.append("\(pattern): _\(pattern)")
                 } else {
-                    // Non-optional stored property (T)
-                    arguments.append("\(pattern): \(typeString)? = nil")
                     assignments.append("\(pattern): \(pattern) ?? self.\(pattern)")
                 }
             }
