@@ -6,7 +6,26 @@ import SwiftDiagnostics
 
 /// Implementation of the `CopyWithChanges` macro.
 public struct CopyWithChangesMacro: MemberMacro {
+    #if canImport(SwiftSyntax600)
     public static func expansion(
+        of attribute: AttributeSyntax,
+        providingMembersOf declaration: some DeclGroupSyntax,
+        conformingTo protocols: [TypeSyntax],
+        in context: some MacroExpansionContext
+    ) throws -> [DeclSyntax] {
+        try members(of: attribute, providingMembersOf: declaration, in: context)
+    }
+    #else
+    public static func expansion(
+        of attribute: AttributeSyntax,
+        providingMembersOf declaration: some DeclGroupSyntax,
+        in context: some MacroExpansionContext
+    ) throws -> [DeclSyntax] {
+        try members(of: attribute, providingMembersOf: declaration, in: context)
+    }
+    #endif
+
+    private static func members(
         of attribute: AttributeSyntax,
         providingMembersOf declaration: some DeclGroupSyntax,
         in context: some MacroExpansionContext
@@ -31,7 +50,7 @@ public struct CopyWithChangesMacro: MemberMacro {
                 $0.positionAfterSkippingLeadingTrivia < $1.positionAfterSkippingLeadingTrivia
             }
 
-        let with = try {
+        let with: DeclSyntax = {
             var arguments: [String] = []
             var prelets: [String] = []
             var assignments: [String] = []
@@ -40,12 +59,12 @@ public struct CopyWithChangesMacro: MemberMacro {
                 guard
                     let pattern = binding.pattern.as(IdentifierPatternSyntax.self)?.identifier.text,
                     let type = binding.typeAnnotation?.type,
-                    binding.accessor == nil
+                    binding.accessorBlock == nil
                 else {
                     continue
                 }
         
-                let typeString = type.description.trimmingCharacters(in: .whitespacesAndNewlines)      
+                let typeString = type.trimmedDescription
                 let isOptional = type.is(OptionalTypeSyntax.self)
 
                 arguments.append("\(pattern): \(typeString)? = nil")
@@ -58,21 +77,20 @@ public struct CopyWithChangesMacro: MemberMacro {
                 }
             }
         
-            return try FunctionDeclSyntax(
-                "public func with(\(raw: arguments.joined(separator: ", "))) -> Self"
-            ) {
-                """
-                \(raw: prelets.joined(separator: "\n"))
-                return Self(
-                \(raw: assignments.joined(separator: ",\n"))
-                )
-                """
-            }
+            // Built as one explicitly indented source string so the expansion reads the same
+            // under every supported swift-syntax version.
+            var body = prelets.map { "    \($0)" }
+            body.append("    return Self(")
+            body.append(assignments.map { "        \($0)" }.joined(separator: ",\n"))
+            body.append("    )")
+            return DeclSyntax(stringLiteral: """
+                public func with(\(arguments.joined(separator: ", "))) -> Self {
+                \(body.joined(separator: "\n"))
+                }
+                """)
         }()
 
-        return [
-            DeclSyntax(with),
-        ]
+        return [with]
     }
 
     enum CopyWithChangesDiagnostic: DiagnosticMessage {

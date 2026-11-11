@@ -19,7 +19,8 @@ let package = Package(
         ),
     ],
     dependencies: [
-        .package(url: "https://github.com/apple/swift-syntax.git", from: "509.0.0"),
+        // 509 through 604 (Swift 5.9 – 6.4 toolchains).
+        .package(url: "https://github.com/apple/swift-syntax.git", "509.0.0"..<"605.0.0"),
     ],
     targets: [
         // Targets are the basic building blocks of a package, defining a module or a test suite.
@@ -43,6 +44,7 @@ let package = Package(
         .testTarget(
             name: "CopyWithChangesTests",
             dependencies: [
+                "CopyWithChanges",
                 "CopyWithChangesMacros",
                 .product(name: "SwiftSyntaxMacrosTestSupport", package: "swift-syntax"),
             ]

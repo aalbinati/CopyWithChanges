@@ -25,4 +25,4 @@ let r3 = r1.with(
     budget: 0
 )
 
-print("r3 \(r3) has no sponsor because `nil` was provided")
+print("r3 \(r3) keeps r1's sponsor: `nil` means \"keep the current value\", even for optionals")

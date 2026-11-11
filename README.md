@@ -33,15 +33,15 @@ let s4 = s1.with(b: 2)
 // the same, but changing two fields
 let s5 = s1.with(c: 4, g: 7)
 
-// will change f to nil (if field f is defined as Optional)
+// keeps the original f, even if field f is defined as Optional
 let s6 = s1.with(f: nil)
 ```
 
 The complete behavior is:
 - providing a value for any field will use that value for the field;
-- providing `nil` for a field that is non-optional is the same as not including that field in the call, i.e. the value from the originalk struct will be used;
-- providing `nil` for an optional field will make that field `nil`;
-- providing `.some(nil)` for an optional field is the same as not including that field in the call, i.e. the value from the originalk struct will be used.
+- providing `nil` for any field, optional or not, is the same as not including that field in the call, i.e. the value from the original struct will be used.
+
+Because `nil` always means "keep", `with` cannot clear an optional field. To set one to `nil`, call the memberwise `init` instead.
 
 The macro can also apply to classes. In either classes or structs, there will have to be a memberwise `init`. In structs this is automatically synthesised by the compiler unless a custom init is defined in the struct declaration. It can also be generated via Xcode's autocompletion features.
 
@@ -74,18 +74,22 @@ struct Report {
     let characters: [String]?
     let budget: Double
 
-    public func with(venue: String? = nil, sponsor: String?? = .some(nil), drinks: [String]? = nil, complexStructure: [Date: [(String, Int)]]? = nil, characters: [String]?? = .some(nil), budget: Double? = nil) -> Self {
-        Self (
+    public func with(venue: String? = nil, sponsor: String?? = nil, drinks: [String]? = nil, complexStructure: [Date: [(String, Int)]]? = nil, characters: [String]?? = nil, budget: Double? = nil) -> Self {
+        let _sponsor: String? = sponsor ?? self.sponsor
+        let _characters: [String]? = characters ?? self.characters
+        return Self(
             venue: venue ?? self.venue,
-            sponsor: sponsor == .none ? nil : self.sponsor,
+            sponsor: _sponsor,
             drinks: drinks ?? self.drinks,
             complexStructure: complexStructure ?? self.complexStructure,
-            characters: characters == .none ? nil : self.characters,
+            characters: _characters,
             budget: budget ?? self.budget
         )
     }
 }
 ```
+
+The macro supports swift-syntax 509 through 604 (Swift 5.9 through 6.4 toolchains).
 
 ## Installation
 
@@ -96,7 +100,7 @@ The [Swift Package Manager](https://swift.org/package-manager/) is a tool for au
 Once you have your Swift package set up, adding `CopyWithChanges` as a dependency is as easy as adding it to the `dependencies` value of your `Package.swift`.
 
 ```swift
-.package(url: "https://github.com/entonio/CopyWithChanges/tree/main", from: "1.1.0"),
+.package(url: "https://github.com/aalbinati/CopyWithChanges.git", from: "1.1.0"),
 ```
 
 Then you can add the `CopyWithChanges` module product as dependency to the `target`s of your choosing, by adding it to the `dependencies` value of your `target`s.
